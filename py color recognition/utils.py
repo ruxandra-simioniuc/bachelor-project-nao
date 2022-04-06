@@ -147,6 +147,7 @@ def getCoordinatesOfContour(img, fileName='coordinates_ONE_FINGER_pos4.txt'):
 
 
 def getCameraFeedAndColor(robotIP, port):
+
     videoDevice = ALProxy('ALVideoDevice', robotIP, port)
 
     # subscribe top camera
@@ -201,11 +202,11 @@ def getCameraFeedAndColor(robotIP, port):
             hsvPixel = cv2.cvtColor(colorPixel, cv2.COLOR_BGR2HSV)[0][0]
             print "H = " + str(hsvPixel[0] * 2) + " S = " + str(hsvPixel[1]) + " v  = " + str(hsvPixel[0])
 
-            #cv2.drawContours(image, [cnt[0]], -1, 255, -1)
+            # cv2.drawContours(image, [cnt[0]], -1, 255, -1)
 
-            #cv2.imshow("Dom color", colorImg)
+            # cv2.imshow("Dom color", colorImg)
 
-            #cv2.imshow("Camera", image)
+            # cv2.imshow("Camera", image)
 
             # if getColor(domR, domG, domB) != "white":
             #     return getColor(domR, domG, domB)
@@ -260,8 +261,6 @@ def getColorHSV(h, s, v):
         return "white"
 
 
-
-
 def saySomething(robotIP, port, words):
     tts = ALProxy("ALTextToSpeech", robotIP, port)
     tts.say(words)
@@ -282,8 +281,8 @@ if __name__ == "__main__":
     topCamera = 0
     bottomCamera = 1
 
-    #getCameraFeed(robotIp, port, bottomCamera, False)
-    #getCoordinatesOfContour("test_images/FINGER_draw_pos4.jpg")
-    #getCameraFeed(robotIp, port, 1, True)
+    getCameraFeed(robotIp, port, bottomCamera, False)
+    # getCoordinatesOfContour("test_images/FINGER_draw_pos4.jpg")
+    # getCameraFeed(robotIp, port, 1, True)
 
-    getCameraFeedAndColor(robotIp, port)
+    # getCameraFeedAndColor(robotIp, port)

@@ -22,9 +22,9 @@ def joints(robotIP):
     # motionProxy.setStiffnesses("Head", 1.0)
 
     # Simple command for the HeadYaw joint at 10% max speed
-    names = "HeadYaw"
-    angles = 30.0 * almath.TO_RAD
-    fractionMaxSpeed = 0.1
+    # names = "HeadYaw"
+    # angles = 30.0 * almath.TO_RAD
+    # fractionMaxSpeed = 0.1
     # motionProxy.setAngles(names, angles, fractionMaxSpeed)
 
     # time.sleep(3.0)
@@ -33,7 +33,7 @@ def joints(robotIP):
     handName = 'RHand'
     motionProxy.openHand(handName)
     time.sleep(3)
-    x = True
+    # x = True
 
     # while x:
     motionProxy.closeHand(handName)
@@ -205,11 +205,11 @@ def extendHand(robotIP, port, arm):
     motionProxy.openHand(currentArm + "Hand")
 
     color = utils.getCameraFeedAndColor(robotIP, port)
-    #print "color: " + color
-
+    print "color: " + color
+    '''
     motionProxy.closeHand(currentArm + "Hand")
     motionProxy.setStiffnesses(arm, 0.5)
-
+    '''
     return color
 
 
@@ -230,17 +230,21 @@ if __name__ == "__main__":
     defaultStand(robotIp, port)
 
     requiredColor = raw_input("What color? ")
-    utils.saySomething(robotIp, port, "Can you give me a "+requiredColor+" toy, please?")
+    # utils.saySomething(robotIp, port, "Can you give me a "+requiredColor+" toy, please?")
 
+    # while cv2.waitKey(33) != 27:
     color = extendHand(robotIp, port, "RArm")
+    '''
     lookAtObject(robotIp, port, "RArm", color)
 
     while color != str(requiredColor).lower():
-        utils.saySomething(robotIp, port, "This is not " + requiredColor+"! Can you try again?")
+        utils.saySomething(robotIp, port, "This is not " + requiredColor+", this is " + color + "! Can you try again?")
         color = extendHand(robotIp, port, "RArm")
         lookAtObject(robotIp, port, "RArm", color)
 
-    utils.saySomething(robotIp, port, "Congratulations! You know your colors!")
+    # utils.saySomething(robotIp, port, "Congratulations! You know your colors!")
+    utils.saySomething(robotIp, port, color)
     defaultStand(robotIp, port)
 
     #arm_movement(robotIp, "RArm")
+    '''

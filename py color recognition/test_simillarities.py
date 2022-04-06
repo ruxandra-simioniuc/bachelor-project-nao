@@ -10,6 +10,7 @@ def dominantColor(path="", image=None, c=None):
         img = image.copy()
     else:
         print "No path or image recieved"
+        sys.exit()
 
     if c is None:
         print "No contour given"
@@ -20,23 +21,31 @@ def dominantColor(path="", image=None, c=None):
     # https://pyimagesearch.com/2016/02/15/determining-object-color-with-opencv/
     mask = np.zeros(img.shape[:2], dtype="uint8")
     cv2.drawContours(mask, [c[0]], -1, 255, -1)
+    # mask = cv2.copyTo()
+
+    # erosion
     mask = cv2.erode(mask, None, iterations=2)
+
     # cv2.imshow("Mask2", mask)
-    mean = cv2.mean(img, mask=mask)[:3]
+    # mean = cv2.mean(img, mask=mask)[:3]
 
     masked = cv2.bitwise_and(img, img, mask=mask)
     # masked = cv2.GaussianBlur(masked, 3)
 
+    # getting the number of pixels for each unique color
     unique, counts = np.unique(masked.reshape(-1, 3), axis=0, return_counts=True)
+    # removing the black pixels
     unique = np.delete(unique, [0, 0, 0], axis=0)
     counts = np.delete(counts, np.argmax(counts))
 
+    # find dominant color in image
     dominantColorBGR = unique[counts == counts.max()][0]
 
     # print "R = " + str(mean[2]) + " G = " + str(mean[1]) + " B = " + str(mean[0])
     print "R = " + str(dominantColorBGR[2]) + " G = " + str(dominantColorBGR[1]) + " B  = " + str(dominantColorBGR[0])
     # cv2.imshow("mask", masked)
     # cv2.waitKey()
+    ### returns R, G, B
     return dominantColorBGR[2], dominantColorBGR[1], dominantColorBGR[0]
 
 
