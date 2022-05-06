@@ -7,6 +7,7 @@ import cv2
 import time
 import utils
 from positions import *
+from file_work import *
 
 
 def joints(robotIP):
@@ -101,7 +102,7 @@ def arm_movement(robotIP, arm="RArm"):
     # motionProxy.setStiffnesses(arm, 0.0)
 
 
-def lookAtObject(robotIP, port, arm, color):
+def lookAtObject(robotIP, port, arm):
     try:
         motionProxy = ALProxy("ALMotion", robotIP, port)
     except Exception, e:
@@ -182,12 +183,21 @@ def extendHand(robotIP, port, arm):
 
     motionProxy.setStiffnesses(arm, 1.0)
 
+    # angleList = [[10 * almath.TO_RAD],  # headPitch
+    #              [40 * almath.TO_RAD],  # shoulderPitch
+    #              [20 * almath.TO_RAD],  # shoulderRoll
+    #              [50 * almath.TO_RAD],  # elbowYaw
+    #              [40 * almath.TO_RAD],  # elbowRoll
+    #              [100 * almath.TO_RAD]]  # wristYaw
+
+    # angles from Choreographe
     angleList = [[10 * almath.TO_RAD],  # headPitch
-                 [40 * almath.TO_RAD],  # shoulderPitch
-                 [20 * almath.TO_RAD],  # shoulderRoll
-                 [50 * almath.TO_RAD],  # elbowYaw
-                 [40 * almath.TO_RAD],  # elbowRoll
-                 [100 * almath.TO_RAD]]  # wristYaw
+                 [45 * almath.TO_RAD],  # shoulderPitch
+                 [11 * almath.TO_RAD],  # shoulderRoll
+                 [52 * almath.TO_RAD],  # elbowYaw
+                 [36 * almath.TO_RAD],  # elbowRoll
+                 [99 * almath.TO_RAD]]  # wristYaw
+
     timeList = [[1.0], [1.0], [1.0], [1.0], [1.0], [1.0], [1.0]]
 
     isAbsolute = True
@@ -204,12 +214,20 @@ def extendHand(robotIP, port, arm):
 
     motionProxy.openHand(currentArm + "Hand")
 
-    color = utils.getCameraFeedAndColor(robotIP, port)
-    print "color: " + color
-    '''
+    prevColor = ''
+    counter = 0
+
+    while counter <= 2:
+        color = utils.getCameraFeedAndColor(robotIP, port)
+        print "color: " + color
+        if prevColor != color:
+            counter = 0
+        prevColor = color
+        counter += 1
+
     motionProxy.closeHand(currentArm + "Hand")
     motionProxy.setStiffnesses(arm, 0.5)
-    '''
+
     return color
 
 
@@ -230,21 +248,22 @@ if __name__ == "__main__":
     defaultStand(robotIp, port)
 
     requiredColor = raw_input("What color? ")
-    # utils.saySomething(robotIp, port, "Can you give me a "+requiredColor+" toy, please?")
+    utils.saySomething(robotIp, port, "Can you give me a " + requiredColor + " toy, please?")
 
-    # while cv2.waitKey(33) != 27:
     color = extendHand(robotIp, port, "RArm")
-    '''
-    lookAtObject(robotIp, port, "RArm", color)
+
+    lookAtObject(robotIp, port, "RArm")
 
     while color != str(requiredColor).lower():
-        utils.saySomething(robotIp, port, "This is not " + requiredColor+", this is " + color + "! Can you try again?")
-        color = extendHand(robotIp, port, "RArm")
-        lookAtObject(robotIp, port, "RArm", color)
+        utils.saySomething(robotIp, port,
+                           "This is not " + requiredColor + ", this is " + color + "! Can you try again?")
 
-    # utils.saySomething(robotIp, port, "Congratulations! You know your colors!")
-    utils.saySomething(robotIp, port, color)
+        color = extendHand(robotIp, port, "RArm")
+
+        lookAtObject(robotIp, port, "RArm")
+
+    utils.saySomething(robotIp, port, "Congratulations! You know your colors!")
+    # utils.saySomething(robotIp, port, color)
     defaultStand(robotIp, port)
 
-    #arm_movement(robotIp, "RArm")
-    '''
+    # arm_movement(robotIp, "RArm")

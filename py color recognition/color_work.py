@@ -28,9 +28,9 @@ def dominantColor(path="", image=None, c=None):
 
     # cv2.imshow("Mask2", mask)
     # mean = cv2.mean(img, mask=mask)[:3]
-
+    img = cv2.GaussianBlur(img, (3, 3), 0)
     masked = cv2.bitwise_and(img, img, mask=mask)
-    # masked = cv2.GaussianBlur(masked, 3)
+
 
     # getting the number of pixels for each unique color
     unique, counts = np.unique(masked.reshape(-1, 3), axis=0, return_counts=True)
@@ -42,21 +42,46 @@ def dominantColor(path="", image=None, c=None):
     dominantColorBGR = unique[counts == counts.max()][0]
 
     # print "R = " + str(mean[2]) + " G = " + str(mean[1]) + " B = " + str(mean[0])
-    print "R = " + str(dominantColorBGR[2]) + " G = " + str(dominantColorBGR[1]) + " B  = " + str(dominantColorBGR[0])
+    #print "R = " + str(dominantColorBGR[2]) + " G = " + str(dominantColorBGR[1]) + " B  = " + str(dominantColorBGR[0])
     # cv2.imshow("mask", masked)
     # cv2.waitKey()
     ### returns R, G, B
     return dominantColorBGR[2], dominantColorBGR[1], dominantColorBGR[0]
 
 
-# if __name__ == "__main__":
-#     path = "test_images/InkedFINGER_imag_frame_0_draw.jpg"
-#     path2 = "test_images/finger_obj23.png"
-#     filePath = "coordinates_ONE_FINGER2.txt"
-#
-#     # contour = getCoordinatesOfContour(path, filePath)
-#
-#     cnt = getContourFromFile(filePath)
-#
-#     img = cv2.imread(path2)
-#     dominantColor(image=img, c=cnt)
+def getColor(r, g, b):
+    if r > 185 and g > 185 and b > 185:
+        return "white"
+    elif r > 100 and g < 100 and b < 100:
+        return "red"
+    elif r < 100 and g < 100 and b > 100:
+        return "blue"
+    elif r < 100 and g > 100 and b < 100:
+        return "green"
+    else:
+        return "white"
+
+
+def getColorHSV(h, s, v):
+    h = h * 2
+    # s = s * 2
+    # v = v * 2
+    if s > 65 and v > 70:
+        if h in range(0, 11) or h in range(340, 361):
+            return "red"
+        elif h in range(11, 41):
+            return "orange"
+        elif h in range(41, 71):
+            return "yellow"
+        elif h in range(71, 151):
+            return "green"
+        elif h in range(151, 261):
+            return "blue"
+        elif h in range(261, 286):
+            return "purple"
+        else:
+            return "pink"
+    elif v < 50 and s <= 100:
+        return "black"
+    else:
+        return "white"
