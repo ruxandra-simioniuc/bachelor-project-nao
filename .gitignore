@@ -3,4 +3,4 @@ venv
 *.whl
 *.pyc
 *.png
-py color recognition/all_images/
+nao_everything/all_images/
