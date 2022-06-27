@@ -1,7 +1,6 @@
 import numpy as np
 import cv2
 from naoqi import ALProxy
-import color_work
 from file_work import *
 from color_work import *
 
