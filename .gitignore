@@ -2,3 +2,5 @@ venv
 .idea
 *.whl
 *.pyc
+*.png
+py color recognition/all_images/

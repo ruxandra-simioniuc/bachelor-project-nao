@@ -4,7 +4,10 @@ import time
 from naoqi import ALProxy
 import almath
 import cv2
+import time
+import utils
 from positions import *
+from file_work import *
 
 
 def joints(robotIP):
@@ -20,9 +23,9 @@ def joints(robotIP):
     # motionProxy.setStiffnesses("Head", 1.0)
 
     # Simple command for the HeadYaw joint at 10% max speed
-    names = "HeadYaw"
-    angles = 30.0 * almath.TO_RAD
-    fractionMaxSpeed = 0.1
+    # names = "HeadYaw"
+    # angles = 30.0 * almath.TO_RAD
+    # fractionMaxSpeed = 0.1
     # motionProxy.setAngles(names, angles, fractionMaxSpeed)
 
     # time.sleep(3.0)
@@ -31,7 +34,7 @@ def joints(robotIP):
     handName = 'RHand'
     motionProxy.openHand(handName)
     time.sleep(3)
-    x = True
+    # x = True
 
     # while x:
     motionProxy.closeHand(handName)
@@ -138,17 +141,23 @@ def lookAtObject(robotIP, port, arm):
 
     useSensors = False
     commandAngles = motionProxy.getAngles(names, useSensors)
+    utils.eyeLEDs(robotIP, port)
 
-    for i in range(0, len(names)):
-        angle = commandAngles[i] * almath.TO_DEG
-        print names[i] + " angle: " + str(angle)
+    # for i in range(0, len(names)):
+    #     angle = commandAngles[i] * almath.TO_DEG
+    #     print names[i] + " angle: " + str(angle)
 
-    stop = raw_input("Press y to default pos: ")
-    if stop == 'y':
-        defaultStand(robotIP, port)
+    # time.sleep(2)
+    #
+    # tts = ALProxy("ALTextToSpeech", robotIP, port)
+    # tts.say(color)
+    #
+    # stop = raw_input("Press y to default pos: ")
+    # if stop == 'y':
+    #     defaultStand(robotIP, port)
 
 
-def extendHand(robotIP, port, arm, close=False):
+def extendHand(robotIP, port, arm):
     try:
         motionProxy = ALProxy("ALMotion", robotIP, port)
     except Exception, e:
@@ -174,31 +183,52 @@ def extendHand(robotIP, port, arm, close=False):
 
     motionProxy.setStiffnesses(arm, 1.0)
 
+    # angleList = [[10 * almath.TO_RAD],  # headPitch
+    #              [40 * almath.TO_RAD],  # shoulderPitch
+    #              [20 * almath.TO_RAD],  # shoulderRoll
+    #              [50 * almath.TO_RAD],  # elbowYaw
+    #              [40 * almath.TO_RAD],  # elbowRoll
+    #              [100 * almath.TO_RAD]]  # wristYaw
+
+    # angles from Choreographe
     angleList = [[10 * almath.TO_RAD],  # headPitch
-                 [40 * almath.TO_RAD],  # shoulderPitch
-                 [20 * almath.TO_RAD],  # shoulderRoll
-                 [50 * almath.TO_RAD],  # elbowYaw
-                 [30 * almath.TO_RAD],  # elbowRoll
-                 [100 * almath.TO_RAD]]  # wristYaw
+                 [45 * almath.TO_RAD],  # shoulderPitch
+                 [11 * almath.TO_RAD],  # shoulderRoll
+                 [52 * almath.TO_RAD],  # elbowYaw
+                 [36 * almath.TO_RAD],  # elbowRoll
+                 [99 * almath.TO_RAD]]  # wristYaw
+
     timeList = [[1.0], [1.0], [1.0], [1.0], [1.0], [1.0], [1.0]]
 
     isAbsolute = True
     motionProxy.angleInterpolation(names, angleList, timeList, isAbsolute)
 
-    useSensors = False
-    commandAngles = motionProxy.getAngles(names, useSensors)
+    # useSensors = False
+    # commandAngles = motionProxy.getAngles(names, useSensors)
 
-    for i in range(0, len(names)):
-        angle = commandAngles[i] * almath.TO_DEG
-        print names[i] + " angle: " + str(angle)
-
-    print "\n"
+    # for i in range(0, len(names)):
+    #     angle = commandAngles[i] * almath.TO_DEG
+    #     print names[i] + " angle: " + str(angle)
+    #
+    # print "\n"
 
     motionProxy.openHand(currentArm + "Hand")
-    time.sleep(3)
-    if close:
-        motionProxy.closeHand(currentArm + "Hand")
+
+    prevColor = ''
+    counter = 0
+
+    while counter <= 2:
+        color = utils.getCameraFeedAndColor(robotIP, port)
+        print "color: " + color
+        if prevColor != color:
+            counter = 0
+        prevColor = color
+        counter += 1
+
+    motionProxy.closeHand(currentArm + "Hand")
     motionProxy.setStiffnesses(arm, 0.5)
+
+    return color
 
 
 if __name__ == "__main__":
@@ -217,6 +247,23 @@ if __name__ == "__main__":
 
     defaultStand(robotIp, port)
 
-    extendHand(robotIp, port, "RArm", False)
-    #lookAtObject(robotIp, port, "RArm")
-    # arm_movement(robotIp, "LArm")
+    requiredColor = raw_input("What color? ")
+    utils.saySomething(robotIp, port, "Can you give me a " + requiredColor + " toy, please?")
+
+    color = extendHand(robotIp, port, "RArm")
+
+    lookAtObject(robotIp, port, "RArm")
+
+    while color != str(requiredColor).lower():
+        utils.saySomething(robotIp, port,
+                           "This is not " + requiredColor + ", this is " + color + "! Can you try again?")
+
+        color = extendHand(robotIp, port, "RArm")
+
+        lookAtObject(robotIp, port, "RArm")
+
+    utils.saySomething(robotIp, port, "Congratulations! You know your colors!")
+    # utils.saySomething(robotIp, port, color)
+    defaultStand(robotIp, port)
+
+    # arm_movement(robotIp, "RArm")
