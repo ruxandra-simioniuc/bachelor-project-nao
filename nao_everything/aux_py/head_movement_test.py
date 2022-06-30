@@ -4,10 +4,10 @@ import sys
 from naoqi import ALProxy
 import almath
 import re
-import walking
+import utils_movement
 import time
 import numpy as np
-import utils
+import utils_camera_voice
 
 # classes = ['doll', 'frog', 'dino', 'duck', 'bear', 'flamingo', 'blue football', 'white football', 'blue ball',
 #            'rainbow ball', 'orange spike', 'unicorn']
@@ -286,20 +286,20 @@ if __name__ == "__main__":
 
                             if round(currentDistance, 2) <= 0.23:
                                 print 'Arrived at object'
-                                walking.turnToHeadAngle(motionProxy)
+                                walking.turnBodyToHeadAngle(motionProxy)
                                 pointAtObject(motionProxy)
                                 exit_condition = True
                                 utils.saySomething(robotIP, 9559, "This is " + requestedObjText)
                                 lowhead = 3
                             elif currentDistance >= 1.5:
                                 print 'Walking only 1.5'
-                                walking.walkDistanceAndRotate(motionProxy, 1.5, 0.0)
+                                walking.walkDistanceAndRotate(motionProxy, 1.5)
                                 [yawAngle, pitchAngle] = getHeadAnglesDeg(motionProxy)
                                 time.sleep(1)
                                 moved = True
                             else:
                                 print 'Far, walking ' + str(round(currentDistance - 0.2))
-                                walking.walkDistanceAndRotate(motionProxy, currentDistance - 0.2, 0.0)
+                                walking.walkDistanceAndRotate(motionProxy, currentDistance - 0.2)
                                 [yawAngle, pitchAngle] = getHeadAnglesDeg(motionProxy)
                                 time.sleep(1)
                                 moved = True

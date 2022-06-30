@@ -2,6 +2,8 @@ import numpy as np
 import cv2
 from naoqi import ALProxy
 
+import utils_camera_voice
+
 ip_addr = "192.168.90.238"
 port_num = 9559
 
@@ -18,17 +20,11 @@ captureDevice = videoDevice.subscribeCamera(
     "test", AL_kTopCamera, AL_kQVGA, AL_kBGRColorSpace, FPS)
 
 
-depthCamera = ALProxy('ALMovementDetection', ip_addr, port_num)
-depth = depthCamera.getDepthSensitivity()
-print(str(depth))
-
 # if depthCamera.movementDetected():
 #     print('detected')
 
-# create image
 width = 320
 height = 240
-image = np.zeros((height, width, 3), np.uint8)
 
 bgr = [50, 60, 160]
 thresh = 30
@@ -49,14 +45,7 @@ while True:
 
         # translate value to mat
 
-        values = map(ord, list(result[6]))
-        i = 0
-        for y in range(0, height):
-            for x in range(0, width):
-                image.itemset((y, x, 0), values[i + 0])
-                image.itemset((y, x, 1), values[i + 1])
-                image.itemset((y, x, 2), values[i + 2])
-                i += 3
+        image = utils.getMatValues(result)
 
         hsv_img = cv2.cvtColor(image, cv2.COLOR_BGR2HSV)
         ycb_img = cv2.cvtColor(image, cv2.COLOR_BGR2YCrCb)
@@ -108,7 +97,7 @@ while True:
                 cv2.drawContours(image, [shape], 0, (255, 0, 255), 2)
                 cv2.putText(image, str(area), (x_cor, y_cor), cv2.FONT_HERSHEY_COMPLEX, 0.5, (255, 255, 255))
 
-        #cv2.imshow("Camera", image)
+        # cv2.imshow("Camera", image)
         cv2.imshow("Result BGR", resultBGR)
         cv2.imshow("Result HSV", resultHSV)
         cv2.imshow("Result YCB", resultYCB)

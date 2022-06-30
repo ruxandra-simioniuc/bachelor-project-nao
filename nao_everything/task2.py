@@ -1,26 +1,19 @@
 import os
-import re
 import time
 import numpy as np
 import almath
 from naoqi import ALProxy
 import sys
-import head_movement_utils as head
-import utils
-import walking
+import utils_head_movement as head
+import utils_camera_voice as voice
+import utils_movement as walking
+from utils_file import sort_alphanumeric
 
 classes = ['bear', 'flamingo', 'duck', 'blue ball', 'frog', 'orange spike', 'dino']
 
 # image dimensions
 width = 320
 height = 240
-
-
-# sorts the dirs and files: 910 is after 99
-def sort_alphanumeric(data):
-    convert = lambda text: int(text) if text.isdigit() else text.lower()
-    alphanum_key = lambda key: [convert(c) for c in re.split('([0-9]+)', key)]
-    return sorted(data, key=alphanum_key)
 
 
 # opens the latest dir and the latest .txt to get the detected objects
@@ -171,7 +164,7 @@ def getRequestedObjectVoice(ip, port):
 # all movement is based on the where variable - an int that is incremented in the calling code
 def searchForObject(motionProxy, where):
     if where == 0:
-        walking.turnToHeadAngle(motionProxy)
+        walking.turnBodyToHeadAngle(motionProxy)
         head.moveHeadToCoords(0.0, 15, motionProxy)
 
     elif where == 1:
@@ -278,7 +271,7 @@ def goToObject(robotIP, requestedObject):
 
                         print "Turned with " + str(yawAngle) + " degrees"
 
-                        walking.turnToHeadAngle(motionProxy)
+                        walking.turnBodyToHeadAngle(motionProxy)
                         head.moveHeadToCoords(0.0, pitchAngle, motionProxy)
                         time.sleep(1.0)
                         turned = True
@@ -325,14 +318,14 @@ def goToObject(robotIP, requestedObject):
                         walking.walkDistance(motionProxy, 0.10)
                         pointAtObject(motionProxy)
                         words = 'This is ' + classes[requestedObject]
-                        utils.saySomethingSimple(tts, words)
+                        voice.saySomethingSimple(tts, words)
                         walking.getUnready(motionProxy, postureProxy)
                         exit_condition = True
                     elif distance <= 0.25:
                         print 'Arrived at  object'
                         pointAtObject(motionProxy)
                         words = 'This is ' + classes[requestedObject]
-                        utils.saySomethingSimple(tts, words)
+                        voice.saySomethingSimple(tts, words)
                         walking.getUnready(motionProxy, postureProxy)
                         exit_condition = True
                     else:
@@ -360,7 +353,7 @@ def goToObject(robotIP, requestedObject):
         # that means the robot cannot find the object
         # TODO: is 2.5 enough?
         if elapsed_time > 2.0:
-            print 'Too much time has passed: '+str(round(elapsed_time, 2))
+            print 'Too much time has passed: ' + str(round(elapsed_time, 2))
             # utils.saySomethingSimple(tts, 'I lost the ' + classes[requestedObject] + '. I\'m searching')
             searchForObject(motionProxy, rememberWhereSearched)
             # extra time for yolo to get the new images
@@ -380,7 +373,7 @@ if __name__ == "__main__":
     robotIP = "172.20.10.3"
 
     # boy
-    #robotIP = "172.20.10.5"
+    # robotIP = "172.20.10.5"
     port = 9559
 
     # utils.saySomething(robotIP, port, 'What object do you want?')

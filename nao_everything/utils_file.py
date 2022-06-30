@@ -1,13 +1,18 @@
-import sys
 import numpy as np
 import cv2
+import re
+
+
+# sorts the dirs and files: 910 is after 99
+def sort_alphanumeric(data):
+    convert = lambda text: int(text) if text.isdigit() else text.lower()
+    alphanum_key = lambda key: [convert(c) for c in re.split('([0-9]+)', key)]
+    return sorted(data, key=alphanum_key)
 
 
 # Reads the coordinates from file
 def getCoordinatesFromFile(path):
-    # file = open(path, 'r')
 
-    # coords = []
     with open(path) as f:
         lines = f.readlines()
 
@@ -26,8 +31,7 @@ def getContourFromFile(path):
 
 
 # extracts the contour from img and writes its coordinates to the specified file
-def getCoordinatesOfContour(img, fileName='coordinates_ONE_FINGER_pos4.txt'):
-
+def getCoordinatesOfContour(img, fileName='coordinates_ONE_FINGER_FIN.txt'):
     file = open(fileName, 'a')
     file.truncate(0)
 
@@ -53,7 +57,6 @@ def getCoordinatesOfContour(img, fileName='coordinates_ONE_FINGER_pos4.txt'):
             result = cv2.bitwise_and(image, image, mask=shapeMask)
 
             cv2.drawContours(image, [shape], 0, (255, 0, 255), 1)
-            # cv2.putText(image, tag, (x_cor, y_cor), cv2.FONT_HERSHEY_COMPLEX, 0.5, (0, 0, 255))
             n = shape.ravel()
             i = 0
             for j in n:
@@ -77,6 +80,3 @@ def getCoordinatesOfContour(img, fileName='coordinates_ONE_FINGER_pos4.txt'):
     cv2.waitKey()
     file.close()
     return contours
-
-
-# getCoordinatesOfContour("CONTOUR_TEST2_finger_obj3.png")

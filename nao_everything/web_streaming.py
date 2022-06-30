@@ -5,6 +5,8 @@ import numpy as np
 
 # https://towardsdatascience.com/video-streaming-in-web-browsers-with-opencv-flask-93a38846fe00
 # Initialize the Flask app
+import utils_camera_voice
+
 app = Flask(__name__)
 
 # robotIP = "192.168.90.238"
@@ -28,28 +30,18 @@ def gen_frames():
     # create image
     width = 320
     height = 240
-    image = np.zeros((height, width, 3), np.uint8)
 
     while True:
-        # success, frame = camera.read()  # read the camera frame
-        # frame = cv2.flip(frame, 1)
-
         # get image
         result = videoDevice.getImageRemote(captureDevice)
 
         if result is None:
             break
         else:
-            # translate value to mat
-            values = map(ord, list(result[6]))
-            i = 0
-            for y in range(0, height):
-                for x in range(0, width):
-                    image.itemset((y, x, 0), values[i + 0])
-                    image.itemset((y, x, 1), values[i + 1])
-                    image.itemset((y, x, 2), values[i + 2])
-                    i += 3
+            image = utils.getMatValues(result, height, width)
 
+            # this line can be commented
+            # it draws a small red circle in the middle of the image
             cv2.circle(image, (width / 2, height / 2), 2, (0, 0, 255), -1)
             ret, buffer = cv2.imencode('.jpg', image)
             frame = buffer.tobytes()

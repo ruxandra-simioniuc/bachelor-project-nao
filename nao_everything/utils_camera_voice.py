@@ -1,8 +1,6 @@
-import numpy as np
-import cv2
 from naoqi import ALProxy
-from file_work import *
-from color_work import *
+from utils_file import *
+from utils_color import *
 
 
 def getCameraFeed(robotIP, port, camera, showContour=False):
@@ -24,13 +22,8 @@ def getCameraFeed(robotIP, port, camera, showContour=False):
     # create image
     width = 320
     height = 240
-    image = np.zeros((height, width, 3), np.uint8)
 
     img_counter = 1
-
-    size = (width, height)
-
-    #savedVideo = cv2.VideoWriter('test_videos/test_video.mp4', cv2.VideoWriter_fourcc(*'mp4v'), 10, size)
 
     while True:
 
@@ -42,17 +35,8 @@ def getCameraFeed(robotIP, port, camera, showContour=False):
         elif result[6] is None:
             print 'no image data string.'
         else:
-
-            # translate value to mat
-
-            values = map(ord, list(result[6]))
             i = 0
-            for y in range(0, height):
-                for x in range(0, width):
-                    image.itemset((y, x, 0), values[i + 0])
-                    image.itemset((y, x, 1), values[i + 1])
-                    image.itemset((y, x, 2), values[i + 2])
-                    i += 3
+            image = getMatValues(result, height, width)
 
             if showContour:
                 for i in range(0, len(coords) - 1):
@@ -75,15 +59,11 @@ def getCameraFeed(robotIP, port, camera, showContour=False):
                 # image = cv2.drawContours(image, c, -1, (0,255,0), 3)
 
             cv2.imshow("Camera", image)
-            # writing the current frame
-            #savedVideo.write(image)
 
             # exit by [ESC]
             if cv2.waitKey(33) == 27:
                 videoDevice.stop(camera)
                 videoDevice.unsubscribe(captureDevice)
-                #savedVideo.release()
-
                 break
             elif cv2.waitKey(33) == 32:
                 img_name = "training/im_{}.png".format(img_counter)
@@ -108,16 +88,12 @@ def getCameraFeedAndColor(robotIP, port):
     # create image
     width = 320
     height = 240
-    image = np.zeros((height, width, 3), np.uint8)
+
     filePath = "coords/coordinates_ONE_FINGER_FIN.txt"
     cnt = getContourFromFile(filePath)
     # print cnt
 
-    frame = 0
-    print "Im here"
-
     while True:
-        frame += 1
         # get image
         result = videoDevice.getImageRemote(captureDevice)
 
@@ -128,15 +104,7 @@ def getCameraFeedAndColor(robotIP, port):
         else:
 
             # translate value to mat
-
-            values = map(ord, list(result[6]))
-            i = 0
-            for y in range(0, height):
-                for x in range(0, width):
-                    image.itemset((y, x, 0), values[i + 0])
-                    image.itemset((y, x, 1), values[i + 1])
-                    image.itemset((y, x, 2), values[i + 2])
-                    i += 3
+            image = getMatValues(result, height, width)
 
             # if frame % 2 == 0:
             domR, domG, domB = dominantColor(image=image, c=cnt)
@@ -146,16 +114,8 @@ def getCameraFeedAndColor(robotIP, port):
             colorPixel = np.uint8([[[domB, domG, domR]]])
 
             hsvPixel = cv2.cvtColor(colorPixel, cv2.COLOR_BGR2HSV)[0][0]
-            # print "H = " + str(hsvPixel[0] * 2) + " S = " + str(hsvPixel[1]) + " v  = " + str(hsvPixel[0])
-
-            # cv2.drawContours(image, [cnt[0]], -1, 255, -1)
-
-            # cv2.imshow("Dom color", colorImg)
 
             cv2.imshow("Camera", image)
-
-            # if getColor(domR, domG, domB) != "white":
-            #     return getColor(domR, domG, domB)
 
             currentColor = getColorHSV(hsvPixel[0], hsvPixel[1], hsvPixel[2])
             print "Current color: " + currentColor
@@ -164,10 +124,6 @@ def getCameraFeedAndColor(robotIP, port):
             if currentColor != "white" and currentColor != "black":
                 videoDevice.unsubscribe(captureDevice)
                 return currentColor
-
-            # exit by [ESC]
-            # if cv2.waitKey(33) == 27:
-            #     break
 
 
 def saySomething(robotIP, port, words):
@@ -187,40 +143,16 @@ def eyeLEDs(robotIP, port):
     leds.on("FaceLeds")
 
 
-def standPose(robotIP):
-    try:
-        postureProxy = ALProxy("ALRobotPosture", robotIP, 9559)
-    except Exception, e:
-        print "Could not create proxy to ALRobotPosture"
-        print "Error was: ", e
+def getMatValues(result, height=320, width=240):
+    image = np.zeros((height, width, 3), np.uint8)
+    values = map(ord, list(result[6]))
+    i = 0
+    for y in range(0, height):
+        for x in range(0, width):
+            image.itemset((y, x, 0), values[i + 0])
+            image.itemset((y, x, 1), values[i + 1])
+            image.itemset((y, x, 2), values[i + 2])
+            i += 3
 
-    # postureProxy.goToPosture("StandInit", 1.0)
-    # postureProxy.goToPosture("SitRelax", 1.0)
-    # postureProxy.goToPosture("StandZero", 1.0)
-    # postureProxy.goToPosture("LyingBelly", 1.0)
-    # postureProxy.goToPosture("LyingBack", 1.0)
-    postureProxy.goToPosture("Stand", 1.0)
-    # postureProxy.goToPosture("Crouch", 1.0)
-    # postureProxy.goToPosture("Sit", 1.0)
+    return image
 
-    print postureProxy.getPostureFamily()
-
-
-if __name__ == "__main__":
-    #robotIp = "192.168.90.238"
-    robotIp = "172.20.10.3"
-    port = 9559
-
-    topCamera = 0
-    bottomCamera = 1
-
-    # getCoordinatesOfContour("CONTOUR_TEST2_finger_obj3.png", "coordinates_ONE_FINGER_FIN.txt")
-    # getCameraFeed(robotIp, port, bottomCamera, True)
-    #
-    getCameraFeed(robotIp, port, 1, False)
-
-    standPose(robotIp)
-    
-
-
-    # getCameraFeedAndColor(robotIp, port)

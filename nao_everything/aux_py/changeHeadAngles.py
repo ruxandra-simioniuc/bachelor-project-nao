@@ -3,7 +3,7 @@ import sys
 from naoqi import ALProxy
 import almath
 import re
-import walking
+import utils_movement
 import time
 
 # classes = ['doll', 'frog', 'dino', 'duck', 'bear', 'flamingo', 'blue football', 'white football', 'blue ball',
@@ -222,7 +222,7 @@ if __name__ == "__main__":
                             #      exit_condition = True
                             theta = (-yawAngle) * almath.TO_RAD
 
-                            walking.walkDistanceAndRotate(robotIP, 0.3, 0.0)
+                            walking.walkDistanceAndRotate(robotIP, 0.3)
                             time.sleep(3)
                             commandAngles = motionProxy.getAngles(["HeadYaw", "HeadPitch"], False)
 
@@ -232,7 +232,7 @@ if __name__ == "__main__":
                             moved = True
                         elif 7.0 * almath.TO_RAD <= commandAngles[1] < 9.0 * almath.TO_RAD:
 
-                            walking.walkDistanceAndRotate(robotIP, 0.1, 0.0)
+                            walking.walkDistanceAndRotate(robotIP, 0.1)
                             print 'Head is low'
                             time.sleep(3)
                             moved = True
@@ -243,7 +243,7 @@ if __name__ == "__main__":
 
                         else:
                             print 'reached obj'
-                            walking.turnToHeadAngle(robotIP)
+                            walking.turnBodyToHeadAngle(robotIP)
                             exit_condition = True
 
                     else:

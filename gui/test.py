@@ -1,11 +1,13 @@
+import time
+
 import cv2
-#from __future__ import print_function
+# from __future__ import print_function
 from PIL import Image
 from PIL import ImageTk
 import tkinter as tk
 import threading
 import datetime
-import imutils
+import subprocess
 import os
 
 
@@ -14,23 +16,22 @@ class PhotoBoothApp:
         # store the video stream object and output path, then initialize
         # the most recently read frame, thread for reading frames, and
         # the thread stop event
-        #self.vs = vs
-        #self.outputPath = outputPath
+        # self.vs = vs
+        # self.outputPath = outputPath
         self.frame = None
         self.thread = None
+        self.thread2 = None
         self.stopEvent = None
         # initialize the root window and image panel
         self.root = tk.Tk()
         self.panel = None
-
+        self.cap = None
         # create a button, that when pressed, will take the current
         # frame and save it to file
         btn = tk.Button(self.root, text="Start stream!",
-                         command=self.startStream)
+                        command=self.test)
         btn.pack(side="bottom", fill="both", expand="yes", padx=10,
                  pady=10)
-
-
 
         # start a thread that constantly pools the video sensor for
         # the most recently read frame
@@ -40,6 +41,15 @@ class PhotoBoothApp:
         self.root.wm_title("NAO Interactive System")
         self.root.wm_protocol("WM_DELETE_WINDOW", self.onClose)
 
+    def test(self):
+        self.thread = threading.Thread(target=self.startStream, args=())
+        self.thread.start()
+
+        time.sleep(5)
+
+        self.cap = cv2.VideoCapture('http://127.0.0.1:5000/video_feed')
+        self.thread2 = threading.Thread(target=self.videoLoop, args=())
+        self.thread2.start()
 
     def videoLoop(self):
         try:
@@ -69,20 +79,13 @@ class PhotoBoothApp:
     def startStream(self):
 
         print('pressed button')
-        os.system("py -2 D:\\RUXI_DOC\\Descktop\\fACultate\\LICENTA\\licenta-nao\\nao_everything\\web_streaming.py")
+        os.system(
+            "D:\\RUXI_DOC\\Descktop\\fACultate\\LICENTA\\licenta-nao\\nao_everything\\venv\\Scripts\\python "
+            "D:\\RUXI_DOC\\Descktop\\fACultate\\LICENTA\\licenta-nao\\nao_everything\\web_streaming.py")
 
-        self.cap = cv2.VideoCapture('http://127.0.0.1:5000/video_feed')
-        self.thread = threading.Thread(target=self.videoLoop, args=())
-        self.thread.start()
+        #sproc = subprocess.Popen(["D:\\RUXI_DOC\\Descktop\\fACultate\\LICENTA\\licenta-nao\\nao_everything\\venv\\Scripts\\python", "D:\\RUXI_DOC\\Descktop\\fACultate\\LICENTA\\licenta-nao\\nao_everything\\web_streaming.py"])
 
-        # # grab the current timestamp and use it to construct the
-        # # output path
-        # ts = datetime.datetime.now()
-        # filename = "{}.jpg".format(ts.strftime("%Y-%m-%d_%H-%M-%S"))
-        # p = os.path.sep.join((self.outputPath, filename))
-        # # save the file
-        # cv2.imwrite(p, self.frame.copy())
-        # print("[INFO] saved {}".format(filename))
+
 
     def onClose(self):
         # set the stop event, cleanup the camera, and allow the rest of
@@ -91,9 +94,6 @@ class PhotoBoothApp:
         self.stopEvent.set()
         self.cap.release()
         self.root.quit()
-
-
-
 
 # cap = cv2.VideoCapture('http://127.0.0.1:5000/video_feed')
 #
