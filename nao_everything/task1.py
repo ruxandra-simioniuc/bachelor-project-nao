@@ -1,3 +1,6 @@
+import argparse
+import sys
+
 from utils_file import *
 from utils_movement import defaultStand, crouch, lookAtObject, extendHand
 from naoqi import ALProxy
@@ -46,7 +49,8 @@ def executeTask1(robotIp):
     lookAtObject(motionProxy)
 
     while color != str(requiredColor).lower():
-        utils_camera_voice.saySomethingSimple(tts, "This is not " + requiredColor + ", this is " + color + "! Can you try again?")
+        utils_camera_voice.saySomethingSimple(tts,
+                                              "This is not " + requiredColor + ", this is " + color + "! Can you try again?")
 
         extendHand(motionProxy)
         color = checkForColor(robotIp, port, motionProxy)
@@ -66,4 +70,12 @@ if __name__ == "__main__":
 
     # boy
     # robotIP = "172.20.10.5"
-    executeTask1(robotIP)
+
+    parser = argparse.ArgumentParser("Arguments for running Task 1")
+    parser.add_argument("robotIP", help="The robot ip as a string")
+    parser.add_argument("color", help="The color of the object NAO will request")
+    args = parser.parse_args()
+
+    print "HEREEEE " + str(args.robotIP)
+
+    executeTask1(args.robotIP)

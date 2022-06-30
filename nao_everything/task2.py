@@ -1,3 +1,4 @@
+import argparse
 import os
 import time
 import numpy as np
@@ -369,19 +370,27 @@ def goToObject(robotIP, requestedObject):
 
 if __name__ == "__main__":
 
-    # girl
-    robotIP = "172.20.10.3"
+    parser = argparse.ArgumentParser("Arguments for running Task 2")
+    parser.add_argument("robotIP", help="The robot ip as a string")
+    parser.add_argument("object", help="requested object")
+    args = parser.parse_args()
 
-    # boy
-    # robotIP = "172.20.10.5"
-    port = 9559
+    # # girl
+    # robotIP = "172.20.10.3"
+    #
+    # # boy
+    # # robotIP = "172.20.10.5"
+    # port = 9559
+    #
+    # # utils.saySomething(robotIP, port, 'What object do you want?')
+    #
+    # # req = getRequestedObjectVoice(robotIP, port)
+    #
+    # requestedObject = getRequestedObject()
+    # while requestedObject == -1:
+    #     requestedObject = getRequestedObject()
 
-    # utils.saySomething(robotIP, port, 'What object do you want?')
+    if args.object not in classes:
+        args.object = "frog"
 
-    # req = getRequestedObjectVoice(robotIP, port)
-
-    requestedObject = getRequestedObject()
-    while requestedObject == -1:
-        requestedObject = getRequestedObject()
-
-    goToObject(robotIP, requestedObject)
+    goToObject(args.robotIP, args.object)
