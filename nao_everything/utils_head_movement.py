@@ -74,7 +74,7 @@ def lookFrontDown(motionProxy):
     if pitch * almath.TO_DEG > 12:
         pitch = 16 * almath.TO_RAD
     else:
-        pitch = 12 * almath.TO_RAD
+        pitch = 14 * almath.TO_RAD
 
     moveHeadToCoords(0.0, pitch, motionProxy)
 

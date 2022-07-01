@@ -1,6 +1,7 @@
 import argparse
 import sys
 
+import utils_movement
 from utils_file import *
 from utils_movement import defaultStand, crouch, lookAtObject, extendHand
 from naoqi import ALProxy
@@ -26,7 +27,7 @@ def checkForColor(robotIP, port, motionProxy):
     return color
 
 
-def executeTask1(robotIp):
+def executeTask1(robotIp, requiredColor):
     port = 9559
 
     try:
@@ -40,7 +41,7 @@ def executeTask1(robotIp):
 
     defaultStand(postureProxy)
 
-    requiredColor = raw_input("What color? ")
+    # requiredColor = raw_input("What color? ")
     utils_camera_voice.saySomethingSimple(tts, "Can you give me a " + requiredColor + " toy, please?")
 
     extendHand(motionProxy)
@@ -78,4 +79,6 @@ if __name__ == "__main__":
 
     print "HEREEEE " + str(args.robotIP)
 
-    executeTask1(args.robotIP)
+
+
+    executeTask1(args.robotIP, args.color)

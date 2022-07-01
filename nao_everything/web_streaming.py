@@ -15,7 +15,7 @@ app = Flask(__name__)
 # girl
 # robotIP = "172.20.10.3"
 
-robotIP = ""
+robotIP = "172.20.10.3"
 
 # boy
 # robotIP = "172.20.10.5"
@@ -42,7 +42,17 @@ def gen_frames():
         if result is None:
             break
         else:
-            image = camera.getMatValues(result, height, width)
+            # image = camera.getMatValues(result, height, width)
+
+            image = np.zeros((height, width, 3), np.uint8)
+            values = map(ord, list(result[6]))
+            i = 0
+            for y in range(0, height):
+                for x in range(0, width):
+                    image.itemset((y, x, 0), values[i + 0])
+                    image.itemset((y, x, 1), values[i + 1])
+                    image.itemset((y, x, 2), values[i + 2])
+                    i += 3
 
             # this line can be commented
             # it draws a small red circle in the middle of the image
@@ -72,16 +82,16 @@ def index():
     return render_template('index.html')
 
 
-@app.route('/video_feed')
+@app.route('/video_feed10')
 def video_feed():
-    return Response(gen_frames_webcam(), mimetype='multipart/x-mixed-replace; boundary=frame')
+    return Response(gen_frames(), mimetype='multipart/x-mixed-replace; boundary=frame')
 
 
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser("Arguments for running Task 2")
-    parser.add_argument("robotIP", help="The robot ip as a string")
-    args = parser.parse_args()
-
-    robotIP = args.robotIP
+    # parser = argparse.ArgumentParser("Arguments for running Task 2")
+    # parser.add_argument("robotIP", help="The robot ip as a string")
+    # args = parser.parse_args()
+    #
+    # robotIP = args.robotIP
 
     app.run(debug=True)

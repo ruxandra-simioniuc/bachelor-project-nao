@@ -7,9 +7,28 @@ import tkinter as tk
 from tkinter import ttk
 import threading
 import os
+import signal
+from subprocess import Popen, PIPE
 
 
-class PhotoBoothApp:
+class Timeout:
+
+    def __init__(self, seconds=1, error_message='TimeoutError'):
+        self.seconds = seconds
+        self.error_message = error_message
+
+    def handle_timeout(self, signum, frame):
+        raise TimeoutError(self.error_message)
+
+    def __enter__(self):
+        signal.signal(signal.SIGALRM, self.handle_timeout)
+        signal.alarm(self.seconds)
+
+    def __exit__(self, type, value, traceback):
+        signal.alarm(0)
+
+
+class NAOGUI(tk.Tk):
     def __init__(self):
         self.frame = None
         self.thread = None
@@ -17,6 +36,8 @@ class PhotoBoothApp:
 
         self.thread3 = None
         self.thread4 = None
+        self.thread5 = None
+        self.thread_finished = False
         self.stopEvent = None
 
         self.root = tk.Tk()
@@ -27,7 +48,7 @@ class PhotoBoothApp:
         self.currentObject = "flamingo"
         self.currentColor = "red"
 
-        self.root.geometry("590x430")
+        self.root.geometry("590x450")
 
         self.space = tk.Label(self.root)
         self.space.grid(column=0, row=0)
@@ -123,12 +144,14 @@ class PhotoBoothApp:
 
             self.btn_Stream["state"] = "disable"
             self.thread = threading.Thread(target=self.startStream, args=())
+            self.thread.daemon = True
             self.thread.start()
 
             time.sleep(5)
 
-            self.cap = cv2.VideoCapture('http://127.0.0.1:5000/video_feed')
+            self.cap = cv2.VideoCapture('http://127.0.0.1:5000/video_feed10')
             self.thread2 = threading.Thread(target=self.videoLoop, args=())
+            self.thread2.daemon = True
             self.thread2.start()
 
             if self.thread2.is_alive():
@@ -137,7 +160,6 @@ class PhotoBoothApp:
 
     def videoLoop(self):
         try:
-            # keep looping over frames until we are instructed to stop
             while not self.stopEvent.is_set():
                 ret, self.frame = self.cap.read()
 
@@ -146,20 +168,20 @@ class PhotoBoothApp:
                     image = Image.fromarray(image)
                     image = ImageTk.PhotoImage(image)
 
-                    # if the panel is not None, we need to initialize it
+                    # initialize panel
                     if self.panel is None:
                         self.panel = tk.Label(image=image, width=320, height=240)
                         self.panel.image = image
                         self.panel.grid(row=4, column=1, columnspan=6, pady=5)
 
-                    # otherwise, simply update the panel
+                    # update panel image
                     else:
                         self.panel.configure(image=image)
                         self.panel.image = image
                 else:
                     break
         except RuntimeError as e:
-            print("[INFO] caught a RuntimeError")
+            print("RuntimeError")
 
     def startStream(self):
 
@@ -171,11 +193,30 @@ class PhotoBoothApp:
 
     def startTask1(self):
         self.thread3 = threading.Thread(target=self.task1, args=())
+        self.thread3.daemon = True
         self.thread3.start()
 
     def startTask2(self):
-        self.thread4 = threading.Thread(target=self.task2, args=())
+
+        self.thread5 = threading.Thread(target=self.startYolo, args=())
+        self.thread5.daemon = True
         self.thread5.start()
+
+        if self.thread5.is_alive():
+            time.sleep(5)
+            self.thread4 = threading.Thread(target=self.task2, args=())
+            self.thread4.daemon = True
+            self.thread4.start()
+
+    def startYolo(self):
+
+        path_to_weights = "D:\\RUXI_DOC\\Descktop\\fACultate\\LICENTA\\licenta-nao\\yolo_project\\yolov5\\runs\\train\\yolo_toys_v2_det\\weights\\best.pt"
+
+        arguments = "--source http://127.0.0.1:5000/video_feed10 --weights " + path_to_weights + " --save-conf --name yolo_toys_v2_det --save-txt"
+
+        os.system(
+            "D:\\RUXI_DOC\\Descktop\\fACultate\\LICENTA\\licenta-nao\\yolo_project\\yolov5\\venv\\Scripts\\python "
+            "D:\\RUXI_DOC\\Descktop\\fACultate\\LICENTA\\licenta-nao\\yolo_project\\yolov5\\detect.py " + arguments)
 
     def task1(self):
 
@@ -200,26 +241,21 @@ class PhotoBoothApp:
             "D:\\RUXI_DOC\\Descktop\\fACultate\\LICENTA\\licenta-nao\\nao_everything\\task2.py " + str(
                 self.currentIp) + " " + str(self.currentObject))
 
-        self.btn_Task1["state"] = "enable"
+        # os.system(
+        #     "D:\\RUXI_DOC\\Descktop\\fACultate\\LICENTA\\licenta-nao\\nao_everything\\venv\\Scripts\\python "
+        #     "D:\\RUXI_DOC\\Descktop\\fACultate\\LICENTA\\licenta-nao\\nao_everything\\aux_py\\test.py " + str(
+        #         self.currentIp) + " " + str(self.currentObject))
+
+        self.btn_Task1["state"] = "normal"
 
     def onClose(self):
-        # set the stop event, cleanup the camera, and allow the rest of
-        # the quit process to continue
-        print("[INFO] closing...")
         self.stopEvent.set()
         self.root.quit()
         sys.exit(0)
 
-# cap = cv2.VideoCapture('http://127.0.0.1:5000/video_feed')
-#
-# while True:
-#     ret, frame = cap.read()
-#     """
-#     your code here
-#     """
-#     cv2.imshow('frame', frame)
-#     if cv2.waitKey(20) & 0xFF == ord('q'):
-#         break
-#
-# cap.release()
-# cv2.destroyAllWindows()
+    def monitorThread(self, thread):
+        if thread.is_alive():
+            self.after(100, lambda: self.monitorThread(thread))
+            self.thread_finished = True
+        else:
+            self.thread_finished = True

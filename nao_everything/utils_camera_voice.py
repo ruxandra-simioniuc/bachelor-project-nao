@@ -89,7 +89,7 @@ def getCameraFeedAndColor(robotIP, port):
     width = 320
     height = 240
 
-    filePath = "coords/coordinates_ONE_FINGER_FIN.txt"
+    filePath = "D:\\RUXI_DOC\\Descktop\\fACultate\\LICENTA\\licenta-nao\\nao_everything\\coords\\coordinates_ONE_FINGER_FIN.txt"
     cnt = getContourFromFile(filePath)
     # print cnt
 

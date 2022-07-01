@@ -5,16 +5,22 @@ import numpy as np
 import almath
 from naoqi import ALProxy
 import sys
+
+import utils_camera_voice
 import utils_head_movement as head
 import utils_camera_voice as voice
 import utils_movement as walking
 from utils_file import sort_alphanumeric
+from utils_movement import pointAtObject
 
 classes = ['bear', 'flamingo', 'duck', 'blue ball', 'frog', 'orange spike', 'dino']
 
 # image dimensions
 width = 320
 height = 240
+
+# stop condition: if NAO can't find the object for 180 degrees, stop searching
+turned_degrees = 0
 
 
 # opens the latest dir and the latest .txt to get the detected objects
@@ -26,6 +32,8 @@ def getLatestObjects(
     # get the latest dir from the path
     # it is sorted
     req_dir = sort_alphanumeric(os.listdir(path))[-1]
+
+    print 'Currently in dir ' + str(req_dir)
 
     # get the path to where the txts are
     path_to_txts = path + req_dir + '\\labels\\'
@@ -88,17 +96,6 @@ def coordsToPixels(x, y):
     return pixelX, pixelY
 
 
-# moves hand to point at object in front of the robot
-def pointAtObject(motionProxy):
-    nameList = ["RShoulderPitch", "RShoulderRoll", "RElbowYaw", "RElbowRoll", "RWristYaw", "RHand"]
-    angleList = [58.0, 5.0, 67.5, 29.0, -60.0, 0.7]
-    angleList = [x * almath.TO_RAD for x in angleList]
-    timeList = [[1.0], [1.0], [1.0], [1.0], [1.0], [1.0]]
-    isAbsolute = True
-
-    motionProxy.angleInterpolation(nameList, angleList, timeList, isAbsolute)
-
-
 # returns the area in pixels
 def getAreaInPixels(w, h):
     return round(w * h * width * height)
@@ -114,7 +111,7 @@ def getDistance(pitch):
     # camera_height = 0.34405
 
     # experimental measurement
-    camera_height = 0.47
+    camera_height = 0.46
 
     # in radians
     # the bottom camera needs a higher correction, since 0.0 pitch angle is different from the actual pitch
@@ -139,31 +136,37 @@ def getRequestedObject():
     return requestedObj
 
 
-def getRequestedObjectVoice(ip, port):
+def getRequestedObjectVoice(ip):
+    port = 9559
     asrProxy = ALProxy("ALSpeechRecognition", ip, port)
+    memProxy = ALProxy("ALMemory", ip, port)
 
     asrProxy.pause(True)
-
     asrProxy.setLanguage("English")
-    asrProxy.setVocabulary(classes, False)
-    asrProxy.subscribe(ip)
 
-    memProxy = ALProxy("ALMemory", ip, port)
-    memProxy.subscribeToEvent('WordRecognized', ip, 'wordRecognized')
+    asrProxy.setVocabulary(classes, False)
+    asrProxy.subscribe("WordRecognized")
+    memProxy = ALProxy("ALMemory", ip, 9559)
+    memProxy.subscribeToEvent('WordRecognized', ip, "printSmth")
 
     asrProxy.pause(False)
 
-    time.sleep(10)
+    time.sleep(5)
 
-    asrProxy.unsubscribe(ip)
+    asrProxy.unsubscribe("WordRecognized")
     data = memProxy.getData("WordRecognized")
-    print 'word recognized: ' + data
-    return data
+    print 'word recognized: '
+    print data
+    return data[0]
 
+
+def printSmth():
+    print "aicia"
 
 # if the object is lost, the robot will look around, then start to rotate anti-clockwise
 # all movement is based on the where variable - an int that is incremented in the calling code
 def searchForObject(motionProxy, where):
+    global turned_degrees
     if where == 0:
         walking.turnBodyToHeadAngle(motionProxy)
         head.moveHeadToCoords(0.0, 15, motionProxy)
@@ -185,9 +188,10 @@ def searchForObject(motionProxy, where):
 
     # turn with 15 degrees until something is found
     else:
-        degrees = 15
+        degrees = 45
         # turn right
         walking.turnToAngle(motionProxy, -degrees)
+        turned_degrees += degrees
 
         if where == 6:
             # look ahead
@@ -198,6 +202,7 @@ def searchForObject(motionProxy, where):
 
 # requestedObject is a positive integer (index of the class)
 def goToObject(robotIP, requestedObject):
+    global turned_degrees
     try:
         motionProxy = ALProxy("ALMotion", robotIP, 9559)
         postureProxy = ALProxy("ALRobotPosture", robotIP, 9559)
@@ -243,7 +248,10 @@ def goToObject(robotIP, requestedObject):
 
             # the requested object is detected
             if checkRequestedObject(requestedObject, currentObjects):
+                print "i see the object"
                 rememberWhereSearched = 0
+                turned_degrees = 0
+
                 actualObject = currentObjects[requestedObject]
                 x, y = coordsToPixels(actualObject['x'], actualObject['y'])
                 w, h = actualObject['w'], actualObject['h']
@@ -274,7 +282,7 @@ def goToObject(robotIP, requestedObject):
 
                         walking.turnBodyToHeadAngle(motionProxy)
                         head.moveHeadToCoords(0.0, pitchAngle, motionProxy)
-                        time.sleep(1.0)
+                        time.sleep(2.0)
                         turned = True
                         loopCounter += 1
                     else:
@@ -287,7 +295,7 @@ def goToObject(robotIP, requestedObject):
                     print 'Here in y = ' + str(y)
                     pitchAngle += (y - targetPosition[1]) / 6.0
                     head.moveHeadToCoords(0.0, pitchAngle, motionProxy)
-                    time.sleep(1.0)
+                    time.sleep(2.0)
                     yHasChanged = True
                 else:
                     yHasChanged = False
@@ -353,13 +361,13 @@ def goToObject(robotIP, requestedObject):
         # more than 2.5 seconds have passed since last txt was made
         # that means the robot cannot find the object
         # TODO: is 2.5 enough?
-        if elapsed_time > 2.0:
+        if elapsed_time > 3.5:
             print 'Too much time has passed: ' + str(round(elapsed_time, 2))
             # utils.saySomethingSimple(tts, 'I lost the ' + classes[requestedObject] + '. I\'m searching')
             searchForObject(motionProxy, rememberWhereSearched)
             # extra time for yolo to get the new images
             # TODO is 1.5 enough?
-            time.sleep(1.5)
+            time.sleep(2.0)
             if rememberWhereSearched < 7:
                 rememberWhereSearched += 1
             else:
@@ -367,30 +375,50 @@ def goToObject(robotIP, requestedObject):
             print ' '
         print 'remember where searched ' + str(rememberWhereSearched)
 
+        if turned_degrees >= 180:
+            utils_camera_voice.saySomethingSimple(tts, "I can\'t see the " + str(
+                classes[requestedObject]) + ". I\'m giving up.")
+            exit_condition = True
+            walking.getUnready(motionProxy, postureProxy)
+
 
 if __name__ == "__main__":
+    # parser = argparse.ArgumentParser("Arguments for running Task 2")
+    # parser.add_argument("robotIP", help="The robot ip as a string")
+    # parser.add_argument("object", help="requested object")
+    # args = parser.parse_args()
 
-    parser = argparse.ArgumentParser("Arguments for running Task 2")
-    parser.add_argument("robotIP", help="The robot ip as a string")
-    parser.add_argument("object", help="requested object")
-    args = parser.parse_args()
+    # girl
+    robotIP = "172.20.10.3"
 
-    # # girl
-    # robotIP = "172.20.10.3"
-    #
     # # boy
     # # robotIP = "172.20.10.5"
     # port = 9559
     #
-    # # utils.saySomething(robotIP, port, 'What object do you want?')
+    utils_camera_voice.saySomething(robotIP, 9559, 'What object do you want? I\'m listening')
+    reqObj = getRequestedObjectVoice(robotIP)
+
+    while reqObj == '':
+        utils_camera_voice.saySomething(robotIP, 9559, 'I didn\'t understand. Can you repeat?')
+        reqObj = getRequestedObjectVoice(robotIP)
+
+    utils_camera_voice.saySomething(robotIP, 9559, 'Looking for '+str(reqObj))
+
+    goToObject(robotIP, classes.index(reqObj))
+
     #
     # # req = getRequestedObjectVoice(robotIP, port)
     #
     # requestedObject = getRequestedObject()
     # while requestedObject == -1:
     #     requestedObject = getRequestedObject()
+    #
+    # # if args.object not in classes:
+    # #     args.object = "frog"
+    # #
+    # # reqObject = classes.index(args.object)
+    #
+    # #goToObject(args.robotIP, reqObject)
+    #
+    # goToObject(robotIP, requestedObject)
 
-    if args.object not in classes:
-        args.object = "frog"
-
-    goToObject(args.robotIP, args.object)

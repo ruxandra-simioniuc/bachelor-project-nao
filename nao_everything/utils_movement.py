@@ -218,3 +218,14 @@ def extendHand(motionProxy):
     motionProxy.angleInterpolation(names, angleList, timeList, isAbsolute)
 
     motionProxy.openHand(currentArm + "Hand")
+
+
+# moves hand to point at object in front of the robot
+def pointAtObject(motionProxy):
+    nameList = ["RShoulderPitch", "RShoulderRoll", "RElbowYaw", "RElbowRoll", "RWristYaw", "RHand"]
+    angleList = [58.0, 5.0, 67.5, 29.0, -60.0, 0.7]
+    angleList = [x * almath.TO_RAD for x in angleList]
+    timeList = [[1.0], [1.0], [1.0], [1.0], [1.0], [1.0]]
+    isAbsolute = True
+
+    motionProxy.angleInterpolation(nameList, angleList, timeList, isAbsolute)
