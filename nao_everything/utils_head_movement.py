@@ -14,7 +14,7 @@ def getHeadAnglesRad(motionProxy):
     return commandAngles
 
 
-# moved head to given angles
+# moves head to given angles
 # x and y must be in degrees
 def moveHeadToCoords(x, y, motionProxy):
     yawAngle = x * almath.TO_RAD
@@ -30,6 +30,12 @@ def moveHeadToCoords(x, y, motionProxy):
 
     angles = getHeadAnglesDeg(motionProxy)
     print "After movement Yaw: " + str(angles[0]) + " Pitch: " + str(angles[1])
+
+
+def lookFront(motionProxy):
+    [_, pitch] = getHeadAnglesRad(motionProxy)
+    pitch = 8 * almath.TO_RAD
+    moveHeadToCoords(12, pitch, motionProxy)
 
 
 def lookLeft(motionProxy):
@@ -77,5 +83,3 @@ def lookFrontDown(motionProxy):
         pitch = 14 * almath.TO_RAD
 
     moveHeadToCoords(0.0, pitch, motionProxy)
-
-

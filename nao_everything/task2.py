@@ -6,7 +6,6 @@ import almath
 from naoqi import ALProxy
 import sys
 
-import utils_camera_voice
 import utils_head_movement as head
 import utils_camera_voice as voice
 import utils_movement as walking
@@ -32,8 +31,6 @@ def getLatestObjects(
     # get the latest dir from the path
     # it is sorted
     req_dir = sort_alphanumeric(os.listdir(path))[-1]
-
-    print 'Currently in dir ' + str(req_dir)
 
     # get the path to where the txts are
     path_to_txts = path + req_dir + '\\labels\\'
@@ -111,7 +108,7 @@ def getDistance(pitch):
     # camera_height = 0.34405
 
     # experimental measurement
-    camera_height = 0.46
+    camera_height = 0.475
 
     # in radians
     # the bottom camera needs a higher correction, since 0.0 pitch angle is different from the actual pitch
@@ -120,6 +117,11 @@ def getDistance(pitch):
     distance = camera_height / np.tan(pitch + correction)
 
     return round(distance, 2)
+
+# actualDistance is in meteres
+def getDistanceForMoving(actualDistance):
+    moving_distance = 0.84 * actualDistance - 0.0186
+    return moving_distance
 
 
 # gets the required object as text from user
@@ -163,13 +165,14 @@ def getRequestedObjectVoice(ip):
 def printSmth():
     print "aicia"
 
+
 # if the object is lost, the robot will look around, then start to rotate anti-clockwise
 # all movement is based on the where variable - an int that is incremented in the calling code
 def searchForObject(motionProxy, where):
     global turned_degrees
     if where == 0:
         walking.turnBodyToHeadAngle(motionProxy)
-        head.moveHeadToCoords(0.0, 15, motionProxy)
+        head.lookFront(motionProxy)
 
     elif where == 1:
         head.lookLeft(motionProxy)
@@ -216,6 +219,7 @@ def goToObject(robotIP, requestedObject):
     # get in position
     walking.getReady(motionProxy, postureProxy)
     time.sleep(1.5)
+    walking.turnToAngle(motionProxy, 0.1)
 
     # the center pixel
     targetPosition = [160, 120]
@@ -233,6 +237,7 @@ def goToObject(robotIP, requestedObject):
 
     turned = False
     loopCounter = 0
+    beenHereOnce = False
     while not exit_condition:
         currentObjects, currentTxt = getLatestObjects()
 
@@ -250,6 +255,7 @@ def goToObject(robotIP, requestedObject):
             if checkRequestedObject(requestedObject, currentObjects):
                 print "i see the object"
                 rememberWhereSearched = 0
+                beenHereOnce = False
                 turned_degrees = 0
 
                 actualObject = currentObjects[requestedObject]
@@ -277,16 +283,16 @@ def goToObject(robotIP, requestedObject):
                     # first, let the robot turn around to face the object
                     # only after it has turned continue with head Pitch
                     if not turned:
+                        if yawAngle > 2.0:
+                            print "Turned with " + str(yawAngle) + " degrees"
 
-                        print "Turned with " + str(yawAngle) + " degrees"
-
-                        walking.turnBodyToHeadAngle(motionProxy)
-                        head.moveHeadToCoords(0.0, pitchAngle, motionProxy)
-                        time.sleep(2.0)
+                            walking.turnBodyToHeadAngle(motionProxy)
+                            head.moveHeadToCoords(0.0, pitchAngle, motionProxy)
+                            time.sleep(2.0)
+                            loopCounter = 1
                         turned = True
-                        loopCounter += 1
-                    else:
-                        print ' Here in else'
+                        # no need to wait another loop if the body didn't turn
+                        loopCounter = 2
 
                 # a 15 pixel error
                 # TODO does it go all the way up if needed?
@@ -312,14 +318,17 @@ def goToObject(robotIP, requestedObject):
                     [_, currentPitch] = head.getHeadAnglesRad(motionProxy)
 
                     distance = getDistance(currentPitch)
-                    print 'Computed distance is ' + str(distance) + ' m'
+                    movingDistance = getDistanceForMoving(distance)
+                    print '------- Computed distance is ' + str(distance) + ' m ---------'
+                    print '------- Mvoing distance is ' + str(movingDistance) + ' m ---------'
 
                     if pitchAngle < 8.0:
                         head.moveHeadToCoords(0.0, 5.0, motionProxy)
 
                     if distance > 1.50:
                         print 'A bit too far'
-                        walking.walkDistance(motionProxy, 1.3)
+                        dist = getDistanceForMoving(1.3)
+                        walking.walkDistance(motionProxy, dist)
                         time.sleep(1)
                     elif distance <= 0.35:
                         print 'Reaaally close'
@@ -339,29 +348,37 @@ def goToObject(robotIP, requestedObject):
                         exit_condition = True
                     else:
                         print 'Normal walk'
-                        walking.walkDistance(motionProxy, distance - 0.3)
+                        walking.walkDistance(motionProxy, distance - 0.1)
                         time.sleep(1)
                 print ' '
 
             # the requested object is not among the detected objects
             else:
-                print 'I dont see the object'
-                # utils.saySomethingSimple(tts, 'I don\'t see the ' + classes[requestedObject] + '. Let me search')
-                searchForObject(motionProxy, rememberWhereSearched)
-                # extra time for yolo to get the new images
-                # TODO is 1.5 enough?
-                time.sleep(1.5)
-                if rememberWhereSearched < 7:
-                    rememberWhereSearched += 1
+                # beenHereOnce lets the loop go one more time -> more chances of finding the object without moving
+                if not beenHereOnce:
+                    print 'I dont see the object'
+                    beenHereOnce = True
+                    voice.saySomethingSimple(tts, 'I don\'t see the ' + classes[requestedObject] + '. Let me search')
                 else:
-                    rememberWhereSearched -= 1
-                print ''
+
+                    searchForObject(motionProxy, rememberWhereSearched)
+                    # extra time for yolo to get the new images
+                    # TODO is 1.5 enough?
+                    time.sleep(1.5)
+                    if rememberWhereSearched < 7:
+                        rememberWhereSearched += 1
+                    else:
+                        rememberWhereSearched -= 1
+                    print ''
 
         timer = time.time()
         # more than 2.5 seconds have passed since last txt was made
         # that means the robot cannot find the object
         # TODO: is 2.5 enough?
         if elapsed_time > 3.5:
+            if not beenHereOnce:
+                voice.saySomethingSimple(tts, 'I don\'t see any toys. I\'m searching')
+                beenHereOnce = True
             print 'Too much time has passed: ' + str(round(elapsed_time, 2))
             # utils.saySomethingSimple(tts, 'I lost the ' + classes[requestedObject] + '. I\'m searching')
             searchForObject(motionProxy, rememberWhereSearched)
@@ -376,7 +393,7 @@ def goToObject(robotIP, requestedObject):
         print 'remember where searched ' + str(rememberWhereSearched)
 
         if turned_degrees >= 180:
-            utils_camera_voice.saySomethingSimple(tts, "I can\'t see the " + str(
+            voice.saySomethingSimple(tts, "I can\'t see the " + str(
                 classes[requestedObject]) + ". I\'m giving up.")
             exit_condition = True
             walking.getUnready(motionProxy, postureProxy)
@@ -395,14 +412,16 @@ if __name__ == "__main__":
     # # robotIP = "172.20.10.5"
     # port = 9559
     #
-    utils_camera_voice.saySomething(robotIP, 9559, 'What object do you want? I\'m listening')
-    reqObj = getRequestedObjectVoice(robotIP)
+    # voice.saySomething(robotIP, 9559, 'What object do you want? I\'m listening')
+    # reqObj = getRequestedObjectVoice(robotIP)
+    #
+    # while reqObj == '':
+    #     voice.saySomething(robotIP, 9559, 'I didn\'t catch that. Can you repeat?')
+    #     reqObj = getRequestedObjectVoice(robotIP)
 
-    while reqObj == '':
-        utils_camera_voice.saySomething(robotIP, 9559, 'I didn\'t understand. Can you repeat?')
-        reqObj = getRequestedObjectVoice(robotIP)
+    # voice.saySomething(robotIP, 9559, 'Looking for ' + str(reqObj))
 
-    utils_camera_voice.saySomething(robotIP, 9559, 'Looking for '+str(reqObj))
+    reqObj = "flamingo"
 
     goToObject(robotIP, classes.index(reqObj))
 
@@ -421,4 +440,3 @@ if __name__ == "__main__":
     # #goToObject(args.robotIP, reqObject)
     #
     # goToObject(robotIP, requestedObject)
-

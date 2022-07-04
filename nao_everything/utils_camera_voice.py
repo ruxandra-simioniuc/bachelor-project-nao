@@ -1,9 +1,12 @@
+import time
 from naoqi import ALProxy
+
+import utils_movement
 from utils_file import *
 from utils_color import *
 
 
-def getCameraFeed(robotIP, port, camera, showContour=False):
+def getCameraFeed(robotIP, port, camera=1, showContour=False):
     if showContour:
         coords = getCoordinatesFromFile("coords/coordinates_ONE_FINGER_FIN.txt")
 
@@ -66,7 +69,7 @@ def getCameraFeed(robotIP, port, camera, showContour=False):
                 videoDevice.unsubscribe(captureDevice)
                 break
             elif cv2.waitKey(33) == 32:
-                img_name = "training/im_{}.png".format(img_counter)
+                img_name = "all_images/docs/im_{}.png".format(img_counter)
                 img_counter += 1
                 cv2.imwrite(img_name, image)
                 print "Saved img"
@@ -89,9 +92,12 @@ def getCameraFeedAndColor(robotIP, port):
     width = 320
     height = 240
 
-    filePath = "D:\\RUXI_DOC\\Descktop\\fACultate\\LICENTA\\licenta-nao\\nao_everything\\coords\\coordinates_ONE_FINGER_FIN.txt"
+    filePath = "D:\\RUXI_DOC\\Descktop\\fACultate\\LICENTA\\licenta-nao\\nao_everything\\coords" \
+               "\\coordinates_ONE_FINGER_FIN.txt "
     cnt = getContourFromFile(filePath)
     # print cnt
+    timer = 0
+    current_time = time.time()
 
     while True:
         # get image
@@ -102,7 +108,6 @@ def getCameraFeedAndColor(robotIP, port):
         elif result[6] is None:
             print 'no image data string.'
         else:
-
             # translate value to mat
             image = getMatValues(result, height, width)
 
@@ -115,7 +120,7 @@ def getCameraFeedAndColor(robotIP, port):
 
             hsvPixel = cv2.cvtColor(colorPixel, cv2.COLOR_BGR2HSV)[0][0]
 
-            cv2.imshow("Camera", image)
+            #cv2.imshow("Camera", image)
 
             currentColor = getColorHSV(hsvPixel[0], hsvPixel[1], hsvPixel[2])
             print "Current color: " + currentColor
@@ -124,6 +129,13 @@ def getCameraFeedAndColor(robotIP, port):
             if currentColor != "white" and currentColor != "black":
                 videoDevice.unsubscribe(captureDevice)
                 return currentColor
+            else:
+                timer += time.time() - current_time
+                current_time = time.time()
+                print "Current time " + str(timer)
+            if timer > 15.0:
+                # too much time has passed and no object was placed
+                return "no_obj"
 
 
 def saySomething(robotIP, port, words):
@@ -156,3 +168,10 @@ def getMatValues(result, height=320, width=240):
 
     return image
 
+
+# robotIp = "172.20.10.3"
+#
+# motionProxy = ALProxy("ALMotion", robotIp, 9559)
+# utils_movement.extendHand(motionProxy)
+#
+# getCameraFeed(robotIp, 9559, showContour=True)

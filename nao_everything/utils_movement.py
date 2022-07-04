@@ -1,4 +1,5 @@
 import sys
+import time
 
 import almath
 
@@ -75,7 +76,7 @@ def walkDistance(motionProxy, distance):
 
     motionProxy.setMotionConfig([["ENABLE_FOOT_CONTACT_PROTECTION", True]])
 
-    initRobotPosition = almath.Pose2D(motionProxy.getRobotPosition(False))
+    distance = 0.84 * distance - 0.0186
 
     # actual moving
     motionProxy.post.moveTo(distance, 0.0, 0.0)
@@ -124,7 +125,7 @@ def defaultStand(postureProxy):
 
 
 def crouch(postureProxy):
-    postureProxy.goToPosture("Crouch", 1.5)
+    postureProxy.goToPosture("Crouch", 2.0)
 
 
 # for testing and getting the wanted angles
@@ -206,11 +207,11 @@ def extendHand(motionProxy):
 
     # angles from Choreographe
     angleList = [[10 * almath.TO_RAD],  # headPitch
-                 [45 * almath.TO_RAD],  # shoulderPitch
-                 [11 * almath.TO_RAD],  # shoulderRoll
+                 [46 * almath.TO_RAD],  # shoulderPitch
+                 [12 * almath.TO_RAD],  # shoulderRoll
                  [52 * almath.TO_RAD],  # elbowYaw
-                 [36 * almath.TO_RAD],  # elbowRoll
-                 [99 * almath.TO_RAD]]  # wristYaw
+                 [37 * almath.TO_RAD],  # elbowRoll
+                 [97 * almath.TO_RAD]]  # wristYaw
 
     timeList = [[1.0], [1.0], [1.0], [1.0], [1.0], [1.0], [1.0]]
 
@@ -218,6 +219,12 @@ def extendHand(motionProxy):
     motionProxy.angleInterpolation(names, angleList, timeList, isAbsolute)
 
     motionProxy.openHand(currentArm + "Hand")
+    # time.sleep(3)
+    # angles = motionProxy.getAngles(names, False)
+    # for i in range(len(angles)):
+    #     print names[i] + " " + str(angles[i] * almath.TO_DEG)
+    #
+    # print ' '
 
 
 # moves hand to point at object in front of the robot

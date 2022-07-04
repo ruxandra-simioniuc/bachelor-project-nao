@@ -1,7 +1,7 @@
 import cv2
 import numpy as np
 import sys
-
+from sklearn.cluster import KMeans
 
 def dominantColor(path="", image=None, c=None):
     if path != "":
@@ -31,21 +31,25 @@ def dominantColor(path="", image=None, c=None):
     img = cv2.GaussianBlur(img, (3, 3), 0)
     masked = cv2.bitwise_and(img, img, mask=mask)
 
-    # getting the number of pixels for each unique color
-    unique, counts = np.unique(masked.reshape(-1, 3), axis=0, return_counts=True)
-    # removing the black pixels
-    unique = np.delete(unique, [0, 0, 0], axis=0)
-    counts = np.delete(counts, np.argmax(counts))
+    # # getting the number of pixels for each unique color
+    # unique, counts = np.unique(masked.reshape(-1, 3), axis=0, return_counts=True)
+    # # removing the black pixels
+    # unique = np.delete(unique, [0, 0, 0], axis=0)
+    # counts = np.delete(counts, np.argmax(counts))
+    #
+    # # find dominant color in image
+    # dominantColorBGR = unique[counts == counts.max()][0]
 
-    # find dominant color in image
-    dominantColorBGR = unique[counts == counts.max()][0]
+    dominantColorRBG = kMeansColor(masked, 3)
 
     # print "R = " + str(mean[2]) + " G = " + str(mean[1]) + " B = " + str(mean[0])
     # print "R = " + str(dominantColorBGR[2]) + " G = " + str(dominantColorBGR[1]) + " B  = " + str(dominantColorBGR[0])
     # cv2.imshow("mask", masked)
     # cv2.waitKey()
     ### returns R, G, B
-    return dominantColorBGR[2], dominantColorBGR[1], dominantColorBGR[0]
+    # return dominantColorBGR[2], dominantColorBGR[1], dominantColorBGR[0]
+
+    return dominantColorRBG[0], dominantColorRBG[1], dominantColorRBG[2]
 
 
 def getColor(r, g, b):
@@ -84,3 +88,24 @@ def getColorHSV(h, s, v):
         return "black"
     else:
         return "white"
+
+
+def kMeansColor(img, clusters):
+    # converting to RGB
+    img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
+    # reshaping to a list of pixels
+    img = img.reshape((img.shape[0] * img.shape[1], 3))
+    kmeans = KMeans(n_clusters=clusters)
+    kmeans.fit(img)
+
+    # get the centers of the clusters
+    colors = np.array(kmeans.cluster_centers_, dtype='uint')
+    unique, counts = np.unique(kmeans.labels_, return_counts=True)
+
+    # removing the black pixels
+    unique = np.delete(unique, [0, 0, 0], axis=0)
+    # deleting the max count because black pixels will always be the majority from the mask
+    counts = np.delete(counts, np.argmax(counts))
+
+    return colors[unique[counts == counts.max()][0]]
+
