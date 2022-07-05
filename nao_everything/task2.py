@@ -118,6 +118,7 @@ def getDistance(pitch):
 
     return round(distance, 2)
 
+
 # actualDistance is in meteres
 def getDistanceForMoving(actualDistance):
     moving_distance = 0.84 * actualDistance - 0.0186
@@ -172,23 +173,24 @@ def searchForObject(motionProxy, where):
     global turned_degrees
     if where == 0:
         walking.turnBodyToHeadAngle(motionProxy)
-        head.lookFront(motionProxy)
+        head.lookFrontDown(motionProxy)
+        print 'looked front down'
 
     elif where == 1:
-        head.lookLeft(motionProxy)
-
-    elif where == 2:
         head.lookLeftDown(motionProxy)
-
+        print 'looked left down'
+    elif where == 2:
+        head.lookLeft(motionProxy)
+        print 'looked left'
     elif where == 3:
-        head.lookFrontDown(motionProxy)
-
+        head.lookFront(motionProxy)
+        print 'looked front'
     elif where == 4:
-        head.lookRightDown(motionProxy)
-
-    elif where == 5:
         head.lookRight(motionProxy)
-
+        print 'looked right'
+    elif where == 5:
+        head.lookRightDown(motionProxy)
+        print 'looked right down'
     # turn with 15 degrees until something is found
     else:
         degrees = 45
@@ -267,7 +269,7 @@ def goToObject(robotIP, requestedObject):
                 [yawAngle, pitchAngle] = head.getHeadAnglesDeg(motionProxy)
 
                 print 'Current x = ' + str(x) + ' current y = ' + str(y)
-
+                yHasChanged = True
                 # a 10 pixel error
                 if x not in range(150, 170) and not turned:
                     yawAngle -= (x - targetPosition[0]) / 5.0
@@ -283,44 +285,47 @@ def goToObject(robotIP, requestedObject):
                     # first, let the robot turn around to face the object
                     # only after it has turned continue with head Pitch
                     if not turned:
-                        if yawAngle > 2.0:
+                        if yawAngle not in range(-2, 2):
                             print "Turned with " + str(yawAngle) + " degrees"
 
                             walking.turnBodyToHeadAngle(motionProxy)
                             head.moveHeadToCoords(0.0, pitchAngle, motionProxy)
                             time.sleep(2.0)
                             loopCounter = 1
-                        turned = True
-                        # no need to wait another loop if the body didn't turn
-                        loopCounter = 2
+                        else:
+                            # no need to wait another loop if the body didn't turn
+                            loopCounter = 2
 
-                # a 15 pixel error
-                # TODO does it go all the way up if needed?
-                # TODO dont forget about turned, so
-                if y not in range(105, 135) and turned and loopCounter >= 2:
-                    print 'Here in y = ' + str(y)
-                    pitchAngle += (y - targetPosition[1]) / 6.0
-                    head.moveHeadToCoords(0.0, pitchAngle, motionProxy)
-                    time.sleep(2.0)
-                    yHasChanged = True
-                else:
-                    yHasChanged = False
-                loopCounter += 1
+                        turned = True
+                    else:
+                        print 'LoopCounter = ' + str(loopCounter)
+                        if loopCounter >= 2:
+                            # a 15 pixel error
+                            # TODO does it go all the way up if needed?
+                            # TODO dont forget about turned, so
+                            if y not in range(105, 135):
+                                print 'Here in y = ' + str(y)
+                                pitchAngle += (y - targetPosition[1]) / 6.0
+                                head.moveHeadToCoords(0.0, pitchAngle, motionProxy)
+                                time.sleep(2.0)
+                                yHasChanged = True
+                            else:
+                                yHasChanged = False
+                        else:
+                            loopCounter += 1
 
                 if not yHasChanged and not xHasChanged:
 
                     print 'Here nothing has changed'
                     turned = False
                     loopCounter = 0
-                    # yHasChanged = False
-                    # xHasChanged = False
 
                     [_, currentPitch] = head.getHeadAnglesRad(motionProxy)
 
                     distance = getDistance(currentPitch)
                     movingDistance = getDistanceForMoving(distance)
                     print '------- Computed distance is ' + str(distance) + ' m ---------'
-                    print '------- Mvoing distance is ' + str(movingDistance) + ' m ---------'
+                    print '------- Moving distance is ' + str(movingDistance) + ' m ---------'
 
                     if pitchAngle < 8.0:
                         head.moveHeadToCoords(0.0, 5.0, motionProxy)
@@ -348,7 +353,7 @@ def goToObject(robotIP, requestedObject):
                         exit_condition = True
                     else:
                         print 'Normal walk'
-                        walking.walkDistance(motionProxy, distance - 0.1)
+                        walking.walkDistance(motionProxy, distance - 0.2)
                         time.sleep(1)
                 print ' '
 
@@ -375,7 +380,7 @@ def goToObject(robotIP, requestedObject):
         # more than 2.5 seconds have passed since last txt was made
         # that means the robot cannot find the object
         # TODO: is 2.5 enough?
-        if elapsed_time > 3.5:
+        if elapsed_time > 23.0:
             if not beenHereOnce:
                 voice.saySomethingSimple(tts, 'I don\'t see any toys. I\'m searching')
                 beenHereOnce = True
@@ -412,16 +417,16 @@ if __name__ == "__main__":
     # # robotIP = "172.20.10.5"
     # port = 9559
     #
-    # voice.saySomething(robotIP, 9559, 'What object do you want? I\'m listening')
-    # reqObj = getRequestedObjectVoice(robotIP)
-    #
-    # while reqObj == '':
-    #     voice.saySomething(robotIP, 9559, 'I didn\'t catch that. Can you repeat?')
-    #     reqObj = getRequestedObjectVoice(robotIP)
+    voice.saySomething(robotIP, 9559, 'What object do you want? I\'m listening')
+    reqObj = getRequestedObjectVoice(robotIP)
 
-    # voice.saySomething(robotIP, 9559, 'Looking for ' + str(reqObj))
+    while reqObj == '':
+        voice.saySomething(robotIP, 9559, 'I didn\'t catch that. Can you repeat?')
+        reqObj = getRequestedObjectVoice(robotIP)
 
-    reqObj = "flamingo"
+    voice.saySomething(robotIP, 9559, 'Looking for ' + str(reqObj))
+
+    # reqObj = "flamingo"
 
     goToObject(robotIP, classes.index(reqObj))
 

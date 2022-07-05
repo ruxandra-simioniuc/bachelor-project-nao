@@ -50,10 +50,8 @@ def executeTask1(robotIp, requiredColor):
 
     extendHand(motionProxy)
     color = checkForColor(robotIp, port, motionProxy)
-    if color == "no_obj":
-        utils_camera_voice.saySomethingSimple(tts, "Thank you!")
-    else:
 
+    if color != "no_obj":
         lookAtObject(motionProxy)
 
         while color != str(requiredColor).lower():

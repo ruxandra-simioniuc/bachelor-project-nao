@@ -41,6 +41,7 @@ def dominantColor(path="", image=None, c=None):
     # dominantColorBGR = unique[counts == counts.max()][0]
 
     dominantColorRBG = kMeansColor(masked, 3)
+    print "Dom color rgb: " + str(dominantColorRBG)
 
     # print "R = " + str(mean[2]) + " G = " + str(mean[1]) + " B = " + str(mean[0])
     # print "R = " + str(dominantColorBGR[2]) + " G = " + str(dominantColorBGR[1]) + " B  = " + str(dominantColorBGR[0])

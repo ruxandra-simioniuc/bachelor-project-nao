@@ -35,32 +35,26 @@ def moveHeadToCoords(x, y, motionProxy):
 def lookFront(motionProxy):
     [_, pitch] = getHeadAnglesRad(motionProxy)
     pitch = 8 * almath.TO_RAD
-    moveHeadToCoords(12, pitch, motionProxy)
+    moveHeadToCoords(0.0, 8, motionProxy)
 
 
 def lookLeft(motionProxy):
     [_, pitch] = getHeadAnglesRad(motionProxy)
     if pitch * almath.TO_DEG > 12:
-        pitch = 5 * almath.TO_RAD
-    moveHeadToCoords(12, pitch, motionProxy)
+        pitch = 5
+    moveHeadToCoords(12, 8, motionProxy)
 
 
 def lookLeftDown(motionProxy):
     [_, pitch] = getHeadAnglesRad(motionProxy)
-
-    if pitch * almath.TO_DEG > 12:
-        pitch = 16 * almath.TO_RAD
-    else:
-        pitch = 12 * almath.TO_RAD
-
-    moveHeadToCoords(12, pitch, motionProxy)
+    moveHeadToCoords(12, 16, motionProxy)
 
 
 def lookRight(motionProxy):
     [_, pitch] = getHeadAnglesRad(motionProxy)
     if pitch * almath.TO_DEG > 12:
         pitch = 5 * almath.TO_RAD
-    moveHeadToCoords(-12, pitch, motionProxy)
+    moveHeadToCoords(-12 , 8, motionProxy)
 
 
 def lookRightDown(motionProxy):
@@ -71,7 +65,7 @@ def lookRightDown(motionProxy):
     else:
         pitch = 12 * almath.TO_RAD
 
-    moveHeadToCoords(-12, pitch, motionProxy)
+    moveHeadToCoords(-12 , 16, motionProxy)
 
 
 def lookFrontDown(motionProxy):
@@ -82,4 +76,4 @@ def lookFrontDown(motionProxy):
     else:
         pitch = 14 * almath.TO_RAD
 
-    moveHeadToCoords(0.0, pitch, motionProxy)
+    moveHeadToCoords(0.0, 18, motionProxy)
